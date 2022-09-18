@@ -17,6 +17,8 @@ package org.apache.ibatis.submitted.nestedresulthandler;
 
 import java.io.Reader;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.ibatis.BaseDataTest;
 import org.apache.ibatis.exceptions.PersistenceException;
@@ -44,11 +46,11 @@ class NestedResultHandlerTest {
   }
 
   @Test
-  void testGetPerson() {
+  void testGetOrderedPerson() {
     try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
       Mapper mapper = sqlSession.getMapper(Mapper.class);
 
-      List<Person> persons = mapper.getPersons();
+      List<Person> persons = mapper.getOrderedPersons();
 
       Person person = persons.get(0);
       Assertions.assertEquals("grandma", person.getName());
@@ -63,6 +65,36 @@ class NestedResultHandlerTest {
       Assertions.assertEquals(2, person.getItems().size());
 
       person = persons.get(2);
+      Assertions.assertEquals("brother", person.getName());
+      Assertions.assertTrue(person.owns("car"));
+      Assertions.assertEquals(1, person.getItems().size());
+    }
+  }
+
+
+  @Test
+  void testGetPerson() {
+    try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
+      Mapper mapper = sqlSession.getMapper(Mapper.class);
+
+      //这个sql，因为有order by i.name，因此，返回的内容并不是ordered，因此必须设置resultOrdered=false
+      //否则，会出错
+      Map<Integer, Person> personMap = mapper.getPersons().stream()
+        .collect(Collectors.toMap(Person::getId, p -> p));
+
+      Person person = personMap.get(1);
+      Assertions.assertEquals("grandma", person.getName());
+      Assertions.assertTrue(person.owns("book"));
+      Assertions.assertTrue(person.owns("tv"));
+      Assertions.assertEquals(2, person.getItems().size());
+
+      person = personMap.get(2);
+      Assertions.assertEquals("sister", person.getName());
+      Assertions.assertTrue(person.owns("phone"));
+      Assertions.assertTrue(person.owns("shoes"));
+      Assertions.assertEquals(2, person.getItems().size());
+
+      person = personMap.get(3);
       Assertions.assertEquals("brother", person.getName());
       Assertions.assertTrue(person.owns("car"));
       Assertions.assertEquals(1, person.getItems().size());
