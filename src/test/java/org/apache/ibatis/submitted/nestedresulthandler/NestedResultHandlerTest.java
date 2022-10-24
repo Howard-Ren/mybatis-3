@@ -77,7 +77,7 @@ class NestedResultHandlerTest {
     try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
       Mapper mapper = sqlSession.getMapper(Mapper.class);
 
-      //这个sql，因为有order by i.name，因此，返回的内容并不是ordered，因此必须设置resultOrdered=false
+      //这个sql，因为有order by i.name，因此，返回的内容并不是ordered，所以必须设置resultOrdered=false
       //否则，会出错
       Map<Integer, Person> personMap = mapper.getPersons().stream()
         .collect(Collectors.toMap(Person::getId, p -> p));
